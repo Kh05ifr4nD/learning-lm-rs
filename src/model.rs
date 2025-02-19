@@ -289,7 +289,7 @@ pub fn test_load_safetensors() {
   use crate::tensor::f32_eq;
   use std::path::PathBuf;
   let project_dir = env!("CARGO_MANIFEST_DIR");
-  let model_dir = PathBuf::from(project_dir).join("models").join("story");
+  let model_dir = PathBuf::from(project_dir).join("model").join("story");
   let model = Llama::from_safetensors(model_dir);
   assert_eq!(model.len_vocab, 2048);
   assert_eq!(model.n_lyr, 2);
