@@ -32,7 +32,7 @@ silu(x) = sigmoid(x) × x
 $$
 
 $$
-sigmoid(x) = \frac{1}{1 + e^{-x}}
+sigmoid(x) = \\frac{1}{1 + e^{-x}}
 $$
 
 注意：
@@ -50,7 +50,7 @@ $$
 请在`src/operators.rs`中实现RMS Normalization，其公式为：
 
 $$
-y_i=\frac{w×x_i}{\sqrt{ \frac{1}{n} \sum_{j} x_{ij}^2 +\epsilon}}
+y_i=\\frac{w×x_i}{\\sqrt{ \\frac{1}{n} \\sum\_{j} x\_{ij}^2 +\\epsilon}}
 $$
 
 注意：
@@ -64,7 +64,7 @@ $$
 想必前两个算子的实现中你已经充分热身，那么重量级的来了。请在`src/operators.rs`中实现矩阵乘（Transpose B）算子，其公式为：
 
 $$
-C=\alpha AB^T + \beta C
+C=\\alpha AB^T + \\beta C
 $$
 
 你有充足的理由质疑为什么这个矩阵乘算子要长成这个样子，以及为什么不用线代课上学的 $C=AB$ 这样更简洁的形式。
@@ -81,7 +81,7 @@ $$
 
 请在`src/models.rs`中实现Feed-Forward神经网络（mlp函数），计算过程如下：
 
-``` python
+```python
 hidden = rms_norm(residual)
 gate = hidden @ gate_weight.T
 up = hidden @ up_weight.T
@@ -139,7 +139,7 @@ residual = output + residual
 
 对于每个头，完整的Self-Attention层的计算过程如下；
 
-``` python
+```python
 x = rms_norm(residual)
 Q = RoPE(x @ Q_weight.T)
 K = RoPE(x @ K_weight.T)
@@ -170,13 +170,13 @@ Self-Attention的调试是很困难的。这里推荐大家使用pytorch来辅�
 
 你可以使用`models/chat`中的对话模型。其对话模板如下：
 
-``` text
+```text
 "{% for message in messages %}{{'<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}{% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>assistant\n' }}{% endif %}"
 ```
 
 这种模板语言叫做Jinja2，在本项目中你可以不用实现任意模板的render功能，直接在代码中内置这个模板。你可以忽略system角色功能。下面是一个首轮输入的例子：
 
-``` text
+```text
 <|im_start|>system
 {system_message}<|im_end|>
 <|im_start|>user

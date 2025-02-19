@@ -9,20 +9,14 @@ use std::path::PathBuf;
 use tokenizers::Tokenizer;
 
 fn main() {
-    let project_dir = env!("CARGO_MANIFEST_DIR");
-    let model_dir = PathBuf::from(project_dir).join("models").join("story");
-    let llama = model::Llama::<f32>::from_safetensors(&model_dir);
-    let tokenizer = Tokenizer::from_file(model_dir.join("tokenizer.json")).unwrap();
-    let input = "Once upon a time";
-    let binding = tokenizer.encode(input, true).unwrap();
-    let input_ids = binding.get_ids();
-    print!("\n{}", input);
-    let output_ids = llama.generate(
-        input_ids,
-        500,
-        0.8,
-        30,
-        1.,
-    );
-    println!("{}", tokenizer.decode(&output_ids, true).unwrap());
+  let prj_dir = env!("CARGO_MANIFEST_DIR");
+  let mdl_dir = PathBuf::from(prj_dir).join("model").join("story");
+  let llama = model::Llama::<f32>::from_safetensors(&mdl_dir);
+  let tknizer = Tokenizer::from_file(mdl_dir.join("tokenizer.json")).unwrap();
+  let inp = "Once upon a time";
+  let encing = tknizer.encode(inp, true).unwrap();
+  let ls_inp_id = encing.get_ids();
+  print!("\n{inp}");
+  let ls_out_id = llama.generate(ls_inp_id, 500, 0.8, 30, 1.);
+  println!("{}", tknizer.decode(&ls_out_id, true).unwrap());
 }

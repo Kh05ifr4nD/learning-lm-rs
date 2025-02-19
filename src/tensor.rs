@@ -1,95 +1,84 @@
-use std::{slice, sync::Arc, vec};
+use std::rc::Rc;
 pub struct Tensor<T> {
-    data: Arc<Box<[T]>>,
-    shape: Vec<usize>,
-    offset: usize,
-    length: usize,
+  data: Rc<Box<[T]>>,
+  shp: Vec<usize>,
+  ofst: usize,
+  len: usize,
 }
 
 impl<T: Copy + Clone + Default> Tensor<T> {
-    pub fn new(data: Vec<T>, shape: &Vec<usize>) -> Self {
-        let length = data.len();
-        Tensor {
-            data: Arc::new(data.into_boxed_slice().try_into().unwrap()),
-            shape: shape.clone(),
-            offset: 0,
-            length: length,
-        }
+  pub fn new(data: Vec<T>, shape: &[usize]) -> Self {
+    Tensor {
+      len: data.len(),
+      data: Rc::new(data.into_boxed_slice()),
+      shp: shape.to_owned(),
+      ofst: 0,
     }
+  }
 
-    pub fn default(shape: &Vec<usize>) -> Self {
-        let length = shape.iter().product();
-        let data = vec![T::default(); length];
-        Self::new(data, shape)
-    }
+  pub fn default(shape: &[usize]) -> Self {
+    Self::new(vec![T::default(); shape.iter().product()], shape)
+  }
 
-    pub fn data(&self) -> &[T] {
-        &self.data[self.offset..][..self.length]
-    }
+  pub fn data(&self) -> &[T] {
+    &self.data[self.ofst..self.ofst + self.len]
+  }
 
-    pub unsafe fn data_mut(&mut self) -> &mut [T] {
-        let ptr = self.data.as_ptr().add(self.offset) as *mut T;
-        slice::from_raw_parts_mut(ptr, self.length)
-    }
+  pub unsafe fn data_mut(&mut self) -> &mut [T] {
+    core::slice::from_raw_parts_mut(self.data.as_ptr().add(self.ofst).cast_mut(), self.len)
+  }
 
-    pub fn shape(&self) -> &Vec<usize> {
-        &self.shape
-    }
+  pub fn shp(&self) -> &Vec<usize> {
+    &self.shp
+  }
 
-    pub fn size(&self) -> usize {
-        self.length
-    }
+  pub fn len(&self) -> usize {
+    self.len
+  }
 
-    // Reinterpret the tensor as a new shape while preserving total size.
-    pub fn reshape(&mut self, new_shape: &Vec<usize>) -> &mut Self {
-        let new_length: usize = new_shape.iter().product();
-        if new_length != self.length {
-            let old_shape = self.shape.clone();
-            panic!("New shape {new_shape:?} does not match tensor of {old_shape:?}");
-        }
-        self.shape = new_shape.clone();
-        self
-    }
+  // Reinterpret the tensor as a new shape while preserving total size.
+  pub fn reshp(&mut self, shp_new: &[usize]) -> &mut Self {
+    assert_eq!(
+      shp_new.iter().product::<usize>(),
+      self.len,
+      "New shape {shp_new:?} does not match tensor of {:?}",
+      self.shp
+    );
+    self.shp.clone_from(&shp_new.to_vec());
+    self
+  }
 
-    pub fn slice(&self, start: usize, shape: &Vec<usize>) -> Self {
-        let new_length: usize = shape.iter().product();
-        assert!(self.offset + start + new_length <= self.length);
-        Tensor {
-            data: self.data.clone(),
-            shape: shape.clone(),
-            offset: self.offset + start,
-            length: new_length,
-        }
-    }
-
-
+  pub fn slice(&self, start: usize, shp: &[usize]) -> Self {
+    let len_slice: usize = shp.iter().product();
+    assert!(self.ofst + start + len_slice <= self.len);
+    Tensor { data: self.data.clone(), shp: shp.to_vec(), ofst: self.ofst + start, len: len_slice }
+  }
 }
 
 // Some helper functions for testing and debugging
 impl Tensor<f32> {
-    #[allow(unused)]
-    pub fn close_to(&self, other: &Self, rel: f32) -> bool {
-        if self.shape() != other.shape() {
-            return false;
-        }
-        let a = self.data();
-        let b = other.data();
-        
-        return a.iter().zip(b).all(|(x, y)| float_eq(x, y, rel));
+  #[allow(unused)]
+  pub fn cl_to(&self, oth: &Self, rel: f32) -> bool {
+    if self.shp() == oth.shp() {
+      self.data().iter().zip(oth.data()).all(|(&x, &y)| f32_eq(x, y, rel))
+    } else {
+      false
     }
-    #[allow(unused)]
-    pub fn print(&self){
-        println!("shpae: {:?}, offset: {}, length: {}", self.shape, self.offset, self.length);
-        let dim = self.shape()[self.shape().len() - 1];
-        let batch = self.length / dim;
-        for i in 0..batch {
-            let start = i * dim;
-            println!("{:?}", &self.data()[start..][..dim]);
-        }
+  }
+  #[allow(unused)]
+  pub fn print(&self) {
+    println!("shpae: {:?}, offset: {}, length: {}", self.shp, self.ofst, self.len);
+    let dim = self.shp()[self.shp().len() - 1];
+    let batch = self.len / dim;
+    for i in 0..batch {
+      let start = i * dim;
+      println!("{:?}", &self.data()[start..][..dim]);
     }
+  }
 }
 
-#[inline]
-pub fn float_eq(x: &f32, y: &f32, rel: f32) -> bool {
-    (x - y).abs() <= rel * (x.abs() + y.abs()) / 2.0
+#[allow(clippy::inline_always)]
+#[inline(always)]
+pub fn f32_eq(x: f32, y: f32, rel: f32) -> bool {
+  (x - y).abs() <= rel * (x.abs() + y.abs()) / 2.
 }

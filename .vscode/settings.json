@@ -1,0 +1,4 @@
+{
+	"editor.formatOnSave": true,
+	"rust-analyzer.files.excludeDirs": [".direnv", "flake_module"]
+}
